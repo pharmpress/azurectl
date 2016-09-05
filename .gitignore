@@ -1,7 +1,4 @@
 /bin/
-azure-storage.conf
 third_party/pkg/
-start_container.sh
-hello.txt
 .idea/
 *.iml

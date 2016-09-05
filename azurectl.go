@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/codegangsta/cli"
-	"github.com/pharmpress/azurectl/command"
-	"github.com/pharmpress/azurectl/version"
+	"github.com/rrramiro/azurectl/command"
+	"github.com/rrramiro/azurectl/version"
 	"os"
 )
 
