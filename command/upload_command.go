@@ -2,8 +2,8 @@ package command
 
 import (
 	"fmt"
-	"github.com/MSOpenTech/azure-sdk-for-go/storage"
-	"github.com/codegangsta/cli"
+	"github.com/Azure/azure-sdk-for-go/storage"
+	"github.com/urfave/cli"
 	"os"
 )
 
@@ -48,7 +48,13 @@ func uploadCommandFunc(c *cli.Context) error {
 		return err
 	}
 
-	err = blobService.PutBlockBlob(containerName, blobName, file)
+	fi, err := file.Stat()
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	blobService.CreateBlockBlobFromReader(containerName, blobName, uint64(fi.Size()), file, nil)
 	if err != nil {
 		fmt.Println(err)
 	}

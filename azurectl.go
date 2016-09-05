@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 	"github.com/rrramiro/azurectl/command"
 	"github.com/rrramiro/azurectl/version"
 	"os"

@@ -1,0 +1,16 @@
+{
+	"ImportPath": "github.com/rrramiro/azurectl",
+	"GoVersion": "go1.6",
+	"Deps": [
+		{
+			"ImportPath": "github.com/Azure/azure-sdk-for-go/storage",
+			"Comment": "v4.0.0-beta-1-g3446793",
+			"Rev": "34467930a15f0d2872168deb11435b8ac3d863bb"
+		},
+		{
+			"ImportPath": "github.com/urfave/cli",
+			"Comment": "v1.18.0-58-gc723b19",
+			"Rev": "c723b19a84af34d905773672ffa1b8ead802e505"
+		}
+	]
+}

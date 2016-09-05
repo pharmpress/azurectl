@@ -2,8 +2,8 @@ package command
 
 import (
 	"fmt"
-	"github.com/MSOpenTech/azure-sdk-for-go/storage"
-	"github.com/codegangsta/cli"
+	"github.com/Azure/azure-sdk-for-go/storage"
+	"github.com/urfave/cli"
 	"os"
 	"io"
 )
