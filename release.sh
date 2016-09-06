@@ -5,6 +5,7 @@ version=$(grep -E -o "[0-9]+\.[0-9]+\.[0-9]+\+git" ./version/version.go
 
 if [[ "$version" =~ ^(.*\.)([0-9]+)\+git$ ]];
 then
+	. ./build.sh
 	inc=$((BASH_REMATCH[2]+1))
 	currentversion="${BASH_REMATCH[1]}${BASH_REMATCH[2]}";
 	nextversion="${BASH_REMATCH[1]}$inc";
@@ -15,6 +16,20 @@ then
 	git add ./version/version.go
 	git commit -m "Setting version to ${nextversion}"
 	git push
+
+	github-release release \
+	--user rrramiro \
+	--repo azurectl \
+	--tag "v$currentversion" \
+	--name "v$currentversion" \
+	--description "first release!"
+
+    github-release upload \
+	--user rrramiro \
+	--repo azurectl \
+	--tag "v$currentversion" \
+	--name "azurectl-linux-amd64" \
+	--file bin/azurectl-linux64-static
 else
 	echo "Version wrong format"
 	exit 1

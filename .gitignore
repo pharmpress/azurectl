@@ -1,4 +1,2 @@
 /bin/
-third_party/pkg/
-.idea/
-*.iml
+/.idea/
