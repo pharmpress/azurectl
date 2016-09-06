@@ -9,7 +9,7 @@ then
 	currentversion="${BASH_REMATCH[1]}${BASH_REMATCH[2]}";
 	nextversion="${BASH_REMATCH[1]}$inc";
 
-	git tag -l "v$currentversion"
+	git tag -a "v$currentversion" -m "Version $currentversion"
 	git push origin "v$currentversion"
 	sed -i -e "s/${currentversion}/${nextversion}/" ./version/version.go
 	git add ./version/version.go
