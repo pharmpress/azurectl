@@ -7,6 +7,7 @@ import (
 	"github.com/urfave/cli"
 	"io"
 	"encoding/base64"
+	"sync/atomic"
 )
 
 // NewUploadCommand is upload implementation
@@ -61,7 +62,7 @@ func uploadCommandFunc(c *cli.Context) error {
 	size := uint64(fi.Size())
 	var chunkSize = storage.MaxBlobBlockSize
 
-	if(size > chunkSize){
+	if(size >  uint64(chunkSize)){
 		err = createBlockBlobFromReaderWithChunks(blobService, containerName, blobName, size, fileReader, chunkSize)
 	} else {
 		err = blobService.CreateBlockBlobFromReader(containerName, blobName, size, fileReader, nil)
@@ -75,38 +76,39 @@ func uploadCommandFunc(c *cli.Context) error {
 }
 
 func createBlockBlobFromReaderWithChunks(blobService storage.BlobStorageClient, container, name string, size uint64, inputSourceReader io.Reader, chunkSize int) error {
-	blockList, err := blobService.GetBlockList(container, name, storage.BlockListTypeAll)
-	if err != nil {
-		return 0, err
-	}
+	var blocksLen uint64 = 0
+	//blockList, err := blobService.GetBlockList(container, name, storage.BlockListTypeAll)
+	//if err != nil {
+	//	return err
+	//}
+	//blocksLen = len(blockList.CommittedBlocks)
 
-	blocksLen := len(blockList.CommittedBlocks)
 	amendList := []storage.Block{}
-	for _, v := range blockList.CommittedBlocks {
-		amendList = append(amendList, storage.Block{v.Name, storage.BlockStatusCommitted})
-	}
+	//for _, v := range blockList.CommittedBlocks {
+	//	amendList = append(amendList, storage.Block{v.Name, storage.BlockStatusCommitted})
+	//}
 	chunk := make([]byte, chunkSize)
+	total := 0
 	for {
 		n, err := inputSourceReader.Read(chunk)
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return 0, err
+			return err
 		}
-
+		atomic.AddUint64(&blocksLen, 1)
 		blockID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%011d\n", blocksLen)))
+
 		data := chunk[:n]
+		total += n
 		err = blobService.PutBlock(container, name, blockID, data)
 		if err != nil {
-				return 0, err
+			return err
 		}
-		// add current uncommitted block to temporary block list
-		amendList = append(amendList, storage.Block{blockID, storage.BlockStatusUncommitted})
-		blocksLen++
+		fmt.Println(fmt.Sprintf("Progress %.2f%%", (float64(total)/float64(size)) * 100.0))
+		amendList = append(amendList, storage.Block{ID: blockID, Status: storage.BlockStatusUncommitted})
 	}
-
-	// update block list to blob committed block list.
-	err = blobService.PutBlockList(container, name, amendList)
+	err := blobService.PutBlockList(container, name, amendList)
 	return err
 }
