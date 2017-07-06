@@ -2,11 +2,13 @@ package command
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/Azure/azure-sdk-for-go/storage"
 	"github.com/urfave/cli"
-	"os"
 )
 
+// NewUploadCommand is upload implementation
 func NewUploadCommand() cli.Command {
 	return cli.Command{
 		Name:  "upload",
@@ -53,8 +55,10 @@ func uploadCommandFunc(c *cli.Context) error {
 		fmt.Println(err)
 		return err
 	}
+	fmt.Println("Uploading " + fileToUpload)
 
-	blobService.CreateBlockBlobFromReader(containerName, blobName, uint64(fi.Size()), file, nil)
+	err = blobService.CreateBlockBlobFromReader(containerName, blobName, uint64(fi.Size()), file, nil)
+
 	if err != nil {
 		fmt.Println(err)
 	}

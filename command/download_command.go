@@ -2,12 +2,14 @@ package command
 
 import (
 	"fmt"
+	"io"
+	"os"
+
 	"github.com/Azure/azure-sdk-for-go/storage"
 	"github.com/urfave/cli"
-	"os"
-	"io"
 )
 
+// NewDownloadCommand is download implementation
 func NewDownloadCommand() cli.Command {
 	return cli.Command{
 		Name:  "download",
@@ -49,6 +51,8 @@ func downloadCommandFunc(c *cli.Context) error {
 		return err
 	}
 	defer file.Close()
+
+	fmt.Println("Downloading " + fileToDownload)
 
 	blob, err := blobService.GetBlob(containerName, blobName)
 	if err != nil {

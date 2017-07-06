@@ -2,10 +2,12 @@ package command
 
 import (
 	"fmt"
+
 	"github.com/Azure/azure-sdk-for-go/storage"
 	"github.com/urfave/cli"
 )
 
+// NewLsCommand is ls implementation
 func NewLsCommand() cli.Command {
 	return cli.Command{
 		Name:  "ls",

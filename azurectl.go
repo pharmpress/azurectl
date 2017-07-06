@@ -1,10 +1,12 @@
 package main
 
 import (
-	"github.com/urfave/cli"
+	"fmt"
+	"os"
+
 	"github.com/rrramiro/azurectl/command"
 	"github.com/rrramiro/azurectl/version"
-	"os"
+	"github.com/urfave/cli"
 )
 
 func main() {
@@ -23,4 +25,5 @@ func main() {
 	}
 
 	app.Run(os.Args)
+	fmt.Println("Finish.")
 }
