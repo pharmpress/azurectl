@@ -3,9 +3,10 @@ package command
 import (
 	"fmt"
 	"os"
-
 	"github.com/Azure/azure-sdk-for-go/storage"
 	"github.com/urfave/cli"
+	"io"
+	"encoding/base64"
 )
 
 // NewUploadCommand is upload implementation
@@ -43,24 +44,69 @@ func uploadCommandFunc(c *cli.Context) error {
 
 	blobService := client.GetBlobService()
 
-	file, err := os.Open(fileToUpload)
+	fileReader, err := os.Open(fileToUpload)
+	defer fileReader.Close()
 
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
 
-	fi, err := file.Stat()
+	fi, err := fileReader.Stat()
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
 	fmt.Println("Uploading " + fileToUpload)
+	size := uint64(fi.Size())
+	var chunkSize = storage.MaxBlobBlockSize
 
-	err = blobService.CreateBlockBlobFromReader(containerName, blobName, uint64(fi.Size()), file, nil)
+	if(size > chunkSize){
+		err = createBlockBlobFromReaderWithChunks(blobService, containerName, blobName, size, fileReader, chunkSize)
+	} else {
+		err = blobService.CreateBlockBlobFromReader(containerName, blobName, size, fileReader, nil)
+	}
+
 
 	if err != nil {
 		fmt.Println(err)
 	}
+	return err
+}
+
+func createBlockBlobFromReaderWithChunks(blobService storage.BlobStorageClient, container, name string, size uint64, inputSourceReader io.Reader, chunkSize int) error {
+	blockList, err := blobService.GetBlockList(container, name, storage.BlockListTypeAll)
+	if err != nil {
+		return 0, err
+	}
+
+	blocksLen := len(blockList.CommittedBlocks)
+	amendList := []storage.Block{}
+	for _, v := range blockList.CommittedBlocks {
+		amendList = append(amendList, storage.Block{v.Name, storage.BlockStatusCommitted})
+	}
+	chunk := make([]byte, chunkSize)
+	for {
+		n, err := inputSourceReader.Read(chunk)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return 0, err
+		}
+
+		blockID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%011d\n", blocksLen)))
+		data := chunk[:n]
+		err = blobService.PutBlock(container, name, blockID, data)
+		if err != nil {
+				return 0, err
+		}
+		// add current uncommitted block to temporary block list
+		amendList = append(amendList, storage.Block{blockID, storage.BlockStatusUncommitted})
+		blocksLen++
+	}
+
+	// update block list to blob committed block list.
+	err = blobService.PutBlockList(container, name, amendList)
 	return err
 }

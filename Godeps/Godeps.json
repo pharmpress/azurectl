@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/rrramiro/azurectl",
-	"GoVersion": "go1.6",
+	"GoVersion": "go1.8",
 	"Deps": [
 		{
 			"ImportPath": "github.com/Azure/azure-sdk-for-go/storage",
