@@ -1,13 +1,14 @@
 package command
 
 import (
+	"encoding/base64"
 	"fmt"
+	"io"
 	"os"
+	"sync/atomic"
+
 	"github.com/Azure/azure-sdk-for-go/storage"
 	"github.com/urfave/cli"
-	"io"
-	"encoding/base64"
-	"sync/atomic"
 )
 
 // NewUploadCommand is upload implementation
@@ -62,12 +63,11 @@ func uploadCommandFunc(c *cli.Context) error {
 	size := uint64(fi.Size())
 	var chunkSize = storage.MaxBlobBlockSize
 
-	if(size >  uint64(chunkSize)){
+	if size > uint64(chunkSize) {
 		err = createBlockBlobFromReaderWithChunks(blobService, containerName, blobName, size, fileReader, chunkSize)
 	} else {
 		err = blobService.CreateBlockBlobFromReader(containerName, blobName, size, fileReader, nil)
 	}
-
 
 	if err != nil {
 		fmt.Println(err)
@@ -76,7 +76,7 @@ func uploadCommandFunc(c *cli.Context) error {
 }
 
 func createBlockBlobFromReaderWithChunks(blobService storage.BlobStorageClient, container, name string, size uint64, inputSourceReader io.Reader, chunkSize int) error {
-	var blocksLen uint64 = 0
+	blocksLen := uint64(0)
 	//blockList, err := blobService.GetBlockList(container, name, storage.BlockListTypeAll)
 	//if err != nil {
 	//	return err
@@ -106,7 +106,7 @@ func createBlockBlobFromReaderWithChunks(blobService storage.BlobStorageClient, 
 		if err != nil {
 			return err
 		}
-		fmt.Println(fmt.Sprintf("Progress %.2f%%", (float64(total)/float64(size)) * 100.0))
+		fmt.Println(fmt.Sprintf("Progress %.2f%%", (float64(total)/float64(size))*100.0))
 		amendList = append(amendList, storage.Block{ID: blockID, Status: storage.BlockStatusUncommitted})
 	}
 	err := blobService.PutBlockList(container, name, amendList)
