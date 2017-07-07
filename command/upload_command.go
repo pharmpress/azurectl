@@ -1,8 +1,11 @@
 package command
 
 import (
+	"encoding/base64"
 	"fmt"
+	"io"
 	"os"
+	"sync/atomic"
 
 	"github.com/Azure/azure-sdk-for-go/storage"
 	"github.com/urfave/cli"
@@ -43,24 +46,69 @@ func uploadCommandFunc(c *cli.Context) error {
 
 	blobService := client.GetBlobService()
 
-	file, err := os.Open(fileToUpload)
+	fileReader, err := os.Open(fileToUpload)
+	defer fileReader.Close()
 
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
 
-	fi, err := file.Stat()
+	fi, err := fileReader.Stat()
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
 	fmt.Println("Uploading " + fileToUpload)
+	size := uint64(fi.Size())
+	var chunkSize = storage.MaxBlobBlockSize
 
-	err = blobService.CreateBlockBlobFromReader(containerName, blobName, uint64(fi.Size()), file, nil)
+	if size > uint64(chunkSize) {
+		err = createBlockBlobFromReaderWithChunks(blobService, containerName, blobName, size, fileReader, chunkSize)
+	} else {
+		err = blobService.CreateBlockBlobFromReader(containerName, blobName, size, fileReader, nil)
+	}
 
 	if err != nil {
 		fmt.Println(err)
 	}
+	return err
+}
+
+func createBlockBlobFromReaderWithChunks(blobService storage.BlobStorageClient, container, name string, size uint64, inputSourceReader io.Reader, chunkSize int) error {
+	blocksLen := uint64(0)
+	//blockList, err := blobService.GetBlockList(container, name, storage.BlockListTypeAll)
+	//if err != nil {
+	//	return err
+	//}
+	//blocksLen = len(blockList.CommittedBlocks)
+
+	amendList := []storage.Block{}
+	//for _, v := range blockList.CommittedBlocks {
+	//	amendList = append(amendList, storage.Block{v.Name, storage.BlockStatusCommitted})
+	//}
+	chunk := make([]byte, chunkSize)
+	total := 0
+	for {
+		n, err := inputSourceReader.Read(chunk)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		atomic.AddUint64(&blocksLen, 1)
+		blockID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%011d\n", blocksLen)))
+
+		data := chunk[:n]
+		total += n
+		err = blobService.PutBlock(container, name, blockID, data)
+		if err != nil {
+			return err
+		}
+		fmt.Println(fmt.Sprintf("Progress %.2f%%", (float64(total)/float64(size))*100.0))
+		amendList = append(amendList, storage.Block{ID: blockID, Status: storage.BlockStatusUncommitted})
+	}
+	err := blobService.PutBlockList(container, name, amendList)
 	return err
 }
