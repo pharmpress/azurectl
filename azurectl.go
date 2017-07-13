@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rrramiro/azurectl/command"
-	"github.com/rrramiro/azurectl/version"
+	"github.com/pharmpress/azurectl/command"
+	"github.com/pharmpress/azurectl/version"
 	"github.com/urfave/cli"
 )
 

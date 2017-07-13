@@ -18,14 +18,14 @@ then
 	git push
 
 	github-release release \
-	--user rrramiro \
+	--user pharmpress \
 	--repo azurectl \
 	--tag "v$currentversion" \
 	--name "v$currentversion" \
 	--description "first release!"
 
     github-release upload \
-	--user rrramiro \
+	--user pharmpress \
 	--repo azurectl \
 	--tag "v$currentversion" \
 	--name "azurectl-linux-amd64" \
